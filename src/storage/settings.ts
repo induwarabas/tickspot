@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type AppSettings = {
   apiKey: string;
   baseUrl: string;
+  reminderEnabled: boolean;
+  reminderTimes: string[];
 };
 
 const SETTINGS_KEY = 'tickspot.settings.v1';
@@ -12,6 +14,8 @@ export function buildDefaultSettings(): AppSettings {
   return {
     apiKey: '',
     baseUrl: DEFAULT_BASE_URL,
+    reminderEnabled: true,
+    reminderTimes: ['10:00', '17:00', '21:00'],
   };
 }
 
@@ -26,6 +30,10 @@ export async function loadSettings(): Promise<AppSettings> {
     return {
       apiKey: parsed.apiKey ?? '',
       baseUrl: parsed.baseUrl ?? DEFAULT_BASE_URL,
+      reminderEnabled: parsed.reminderEnabled ?? true,
+      reminderTimes: Array.isArray(parsed.reminderTimes)
+        ? parsed.reminderTimes.filter((value) => typeof value === 'string')
+        : ['10:00', '17:00', '21:00'],
     };
   } catch (error) {
     return buildDefaultSettings();
