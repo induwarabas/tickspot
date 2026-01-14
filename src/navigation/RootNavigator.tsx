@@ -1,7 +1,8 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import EntriesScreen from '../screens/EntriesScreen';
 import EntryFormScreen from '../screens/EntryFormScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -14,6 +15,7 @@ export type EntriesStackParamList = {
 
 export type RootTabParamList = {
   EntriesStack: undefined;
+  CreateEntry: undefined;
   Settings: undefined;
 };
 
@@ -29,6 +31,27 @@ function EntriesStack() {
   );
 }
 
+function CreateEntryButton() {
+  const navigation = useNavigation();
+
+  return (
+    <View style={styles.createButtonContainer}>
+      <Pressable
+        style={styles.createButton}
+        onPress={() => {
+          navigation.navigate('EntriesStack' as never, { screen: 'EntryForm' } as never);
+        }}
+      >
+        <Text style={styles.createButtonText}>+</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function EmptyScreen() {
+  return <View style={styles.emptyScreen} />;
+}
+
 export default function RootNavigator() {
   return (
     <NavigationContainer>
@@ -38,8 +61,50 @@ export default function RootNavigator() {
           component={EntriesStack}
           options={{ title: 'Entries', headerShown: false }}
         />
+        <Tab.Screen
+          name="CreateEntry"
+          component={EmptyScreen}
+          options={{
+            title: '',
+            headerShown: false,
+            tabBarButton: () => <CreateEntryButton />,
+          }}
+        />
         <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  createButtonContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#1f2933',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -18,
+    alignSelf: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  createButtonText: {
+    color: '#f9f5ee',
+    fontSize: 28,
+    fontWeight: '700',
+    lineHeight: 30,
+  },
+  emptyScreen: {
+    flex: 1,
+    backgroundColor: '#f7f5f0',
+  },
+});

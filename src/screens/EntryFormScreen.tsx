@@ -16,14 +16,15 @@ import { EntriesStackParamList } from '../navigation/RootNavigator';
 import {
   createEntry,
   deleteEntry,
+  getClients,
   getProjects,
   getTasks,
+  TickClient,
   TickProject,
   TickTask,
   updateEntry,
 } from '../api/tickApi';
 import { useSettings } from '../context/SettingsContext';
-import ChipSelect, { ChipOption } from '../components/ChipSelect';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
@@ -47,6 +48,7 @@ export default function EntryFormScreen({ navigation, route }: Props) {
   const [isSaving, setIsSaving] = useState(false);
   const [projects, setProjects] = useState<TickProject[]>([]);
   const [tasks, setTasks] = useState<TickTask[]>([]);
+  const [clients, setClients] = useState<TickClient[]>([]);
   const [isLoadingLookups, setIsLoadingLookups] = useState(false);
 
   const isEditing = Boolean(entry?.id);
@@ -69,13 +71,20 @@ export default function EntryFormScreen({ navigation, route }: Props) {
 
     let isMounted = true;
     setIsLoadingLookups(true);
-    Promise.all([getProjects(settings), getTasks(settings)])
-      .then(([projectList, taskList]) => {
+    Promise.all([getProjects(settings), getTasks(settings), getClients(settings)])
+      .then(([projectList, taskList, clientList]) => {
         if (!isMounted) {
           return;
         }
         setProjects(projectList);
         setTasks(taskList);
+        setClients(clientList);
+        if (entry?.task_id) {
+          const matched = taskList.find((task) => task.id === entry.task_id);
+          if (matched?.project_id != null) {
+            setProjectId((current) => current ?? matched.project_id ?? null);
+          }
+        }
       })
       .catch((error) => {
         if (isMounted) {
@@ -91,26 +100,46 @@ export default function EntryFormScreen({ navigation, route }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [isReady, settings]);
+  }, [isReady, settings, entry?.task_id]);
 
-  const projectOptions: SelectOption[] = useMemo(
-    () =>
-      projects.map((project) => ({
-        label: project.name,
-        value: project.id,
-      })),
-    [projects],
-  );
+  const projectNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    projects.forEach((project) => map.set(project.id, project.name));
+    return map;
+  }, [projects]);
 
-  const taskOptions: SelectOption[] = useMemo(() => {
-    const visibleTasks = projectId
-      ? tasks.filter((task) => task.project_id === projectId)
-      : tasks;
-    return visibleTasks.map((task) => ({
-      label: task.name,
-      value: task.id,
-    }));
-  }, [tasks, projectId]);
+  const clientNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    clients.forEach((client) => map.set(client.id, client.name));
+    return map;
+  }, [clients]);
+
+  const projectById = useMemo(() => {
+    const map = new Map<number, TickProject>();
+    projects.forEach((project) => map.set(project.id, project));
+    return map;
+  }, [projects]);
+
+  const tasksByProject = useMemo(() => {
+    const grouped = new Map<string, TickTask[]>();
+    tasks.forEach((task) => {
+      const project = task.project_id ? projectById.get(task.project_id) : null;
+      const projectName = project?.name ?? 'Other';
+      const clientName = project?.client_id ? clientNameById.get(project.client_id) : undefined;
+      const key = clientName ? `${clientName} - ${projectName}` : projectName;
+      const list = grouped.get(key) ?? [];
+      list.push(task);
+      grouped.set(key, list);
+    });
+    return Array.from(grouped.entries()).map(([name, list]) => ({ name, list }));
+  }, [tasks, projectById, clientNameById]);
+
+  const formattedHours = useMemo(() => {
+    const totalMinutes = Math.round(hours * 60);
+    const hoursPart = Math.floor(totalMinutes / 60);
+    const minutesPart = totalMinutes % 60;
+    return `${hoursPart}h ${minutesPart.toString().padStart(2, '0')}m`;
+  }, [hours]);
 
   const handleSave = async () => {
     if (!settings.apiKey) {
@@ -118,7 +147,7 @@ export default function EntryFormScreen({ navigation, route }: Props) {
       return;
     }
 
-    if (!payload.date || !payload.hours) {
+    if (!payload.date || payload.hours < 0) {
       Alert.alert('Missing fields', 'Please enter a date and hours.');
       return;
     }
@@ -185,13 +214,13 @@ export default function EntryFormScreen({ navigation, route }: Props) {
         <View style={styles.fieldGroup}>
           <View style={styles.sliderHeader}>
             <Text style={styles.label}>Hours</Text>
-            <Text style={styles.sliderValue}>{hours.toFixed(2)}h</Text>
+            <Text style={styles.sliderValue}>{formattedHours}</Text>
           </View>
           <Slider
             style={styles.slider}
             minimumValue={0}
             maximumValue={12}
-            step={0.25}
+            step={1 / 12}
             value={hours}
             onValueChange={setHours}
             minimumTrackTintColor="#1f2933"
@@ -204,44 +233,56 @@ export default function EntryFormScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        <ChipSelect
-          label="Project"
-          value={projectId}
-          options={projectOptions}
-          onChange={(value) => {
-            setProjectId(value);
-            setTaskId(null);
-          }}
-          allowClear
-          disabled={isLoadingLookups || !settings.apiKey}
-          helperText={
-            !settings.apiKey
-              ? 'Add an API key in Settings to load projects.'
-              : isLoadingLookups
-                ? 'Loading projects...'
-                : undefined
-          }
-        />
-
-        <ChipSelect
-          label="Task"
-          value={taskId}
-          options={taskOptions}
-          onChange={setTaskId}
-          allowClear
-          disabled={isLoadingLookups || !settings.apiKey || tasks.length === 0}
-          helperText={
-            !settings.apiKey
-              ? 'Add an API key in Settings to load tasks.'
-              : isLoadingLookups
-                ? 'Loading tasks...'
-                : tasks.length === 0
-                  ? 'No tasks available.'
-                  : projectId
-                    ? 'Filtered by project.'
-                    : undefined
-          }
-        />
+        <View style={styles.fieldGroup}>
+          <View style={styles.taskHeaderRow}>
+            <Text style={styles.label}>Task</Text>
+            {taskId != null ? (
+              <Pressable
+                style={styles.clearButton}
+                onPress={() => {
+                  setTaskId(null);
+                  setProjectId(null);
+                }}
+                disabled={isLoadingLookups || !settings.apiKey}
+              >
+                <Text style={styles.clearText}>Clear</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {!settings.apiKey ? (
+            <Text style={styles.helperText}>Add an API key in Settings to load tasks.</Text>
+          ) : isLoadingLookups ? (
+            <Text style={styles.helperText}>Loading tasks...</Text>
+          ) : tasks.length === 0 ? (
+            <Text style={styles.helperText}>No tasks available.</Text>
+          ) : (
+            tasksByProject.map((group) => (
+              <View key={group.name} style={styles.taskGroup}>
+                <Text style={styles.groupTitle}>{group.name}</Text>
+                <View style={styles.chipWrap}>
+                  {group.list.map((task) => {
+                    const isSelected = task.id === taskId;
+                    return (
+                      <Pressable
+                        key={task.id}
+                        style={[styles.chip, isSelected && styles.chipSelected]}
+                        onPress={() => {
+                          setTaskId(task.id);
+                          setProjectId(task.project_id ?? null);
+                        }}
+                        disabled={isLoadingLookups}
+                      >
+                        <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                          {task.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ))
+          )}
+        </View>
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Notes</Text>
@@ -295,6 +336,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
   },
+  helperText: {
+    color: '#8c8577',
+    fontSize: 12,
+    marginBottom: 8,
+  },
   input: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -323,6 +369,59 @@ const styles = StyleSheet.create({
   sliderLegend: {
     color: '#8c8577',
     fontSize: 12,
+  },
+  taskHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  clearButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#f0ede6',
+  },
+  clearText: {
+    color: '#1f2933',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  taskGroup: {
+    marginBottom: 12,
+  },
+  groupTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8c8577',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  chipWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#e3ded4',
+    backgroundColor: '#ffffff',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  chipSelected: {
+    backgroundColor: '#1f2933',
+    borderColor: '#1f2933',
+  },
+  chipText: {
+    color: '#1f2933',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  chipTextSelected: {
+    color: '#f9f5ee',
   },
   notesInput: {
     minHeight: 120,

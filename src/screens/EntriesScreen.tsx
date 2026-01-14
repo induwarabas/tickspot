@@ -11,7 +11,17 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EntriesStackParamList } from '../navigation/RootNavigator';
-import { deleteEntry, getEntriesByDate, TickEntry } from '../api/tickApi';
+import {
+  deleteEntry,
+  getClients,
+  getEntriesByDate,
+  getProjects,
+  getTasks,
+  TickClient,
+  TickEntry,
+  TickProject,
+  TickTask,
+} from '../api/tickApi';
 import { useSettings } from '../context/SettingsContext';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
@@ -34,6 +44,9 @@ export default function EntriesScreen({ navigation }: Props) {
   const [entries, setEntries] = useState<TickEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [projects, setProjects] = useState<TickProject[]>([]);
+  const [tasks, setTasks] = useState<TickTask[]>([]);
+  const [clients, setClients] = useState<TickClient[]>([]);
 
   const fetchEntries = useCallback(async () => {
     if (!isReady) {
@@ -73,10 +86,73 @@ export default function EntriesScreen({ navigation }: Props) {
     }, [fetchEntries]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!isReady || !settings.apiKey) {
+        return;
+      }
+      let isMounted = true;
+      Promise.allSettled([
+        getProjects(settings),
+        getTasks(settings),
+        getClients(settings),
+      ]).then((results) => {
+        if (!isMounted) {
+          return;
+        }
+        const [projectsResult, tasksResult, clientsResult] = results;
+        if (projectsResult.status === 'fulfilled') {
+          setProjects(projectsResult.value);
+        }
+        if (tasksResult.status === 'fulfilled') {
+          setTasks(tasksResult.value);
+        }
+        if (clientsResult.status === 'fulfilled') {
+          setClients(clientsResult.value);
+        }
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    }, [isReady, settings]),
+  );
+
   const totalHours = useMemo(
     () => entries.reduce((sum, entry) => sum + Number(entry.hours || 0), 0),
     [entries],
   );
+
+  const formatHours = useCallback((value: number) => {
+    const totalMinutes = Math.round(value * 60);
+    const hoursPart = Math.floor(totalMinutes / 60);
+    const minutesPart = totalMinutes % 60;
+    return `${hoursPart}h ${minutesPart.toString().padStart(2, '0')}m`;
+  }, []);
+
+  const taskNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    tasks.forEach((task) => map.set(task.id, task.name));
+    return map;
+  }, [tasks]);
+
+  const taskById = useMemo(() => {
+    const map = new Map<number, TickTask>();
+    tasks.forEach((task) => map.set(task.id, task));
+    return map;
+  }, [tasks]);
+
+  const projectById = useMemo(() => {
+    const map = new Map<number, TickProject>();
+    projects.forEach((project) => map.set(project.id, project));
+    return map;
+  }, [projects]);
+
+  const clientNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    clients.forEach((client) => map.set(client.id, client.name));
+    return map;
+  }, [clients]);
 
   const handleDelete = useCallback(
     (entry: TickEntry) => {
@@ -110,7 +186,7 @@ export default function EntriesScreen({ navigation }: Props) {
         </Pressable>
         <View>
           <Text style={styles.dateText}>{date}</Text>
-          <Text style={styles.totalText}>{`Total ${totalHours.toFixed(2)}h`}</Text>
+          <Text style={styles.totalText}>{`Total ${formatHours(totalHours)}`}</Text>
         </View>
         <Pressable style={styles.dateButton} onPress={() => setDate(shiftDate(date, 1))}>
           <Text style={styles.dateButtonText}>Next</Text>
@@ -140,18 +216,21 @@ export default function EntriesScreen({ navigation }: Props) {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardHours}>{Number(item.hours || 0).toFixed(2)}h</Text>
+              <Text style={styles.cardHours}>{formatHours(Number(item.hours || 0))}</Text>
               <Text style={styles.cardMeta}>#{item.id}</Text>
             </View>
             <Text style={styles.cardNotes}>{item.notes || 'No notes provided.'}</Text>
-            <View style={styles.cardMetaRow}>
-              {item.task_id ? (
-                <Text style={[styles.cardMeta, styles.cardMetaItem]}>Task {item.task_id}</Text>
-              ) : null}
-              {item.project_id ? (
-                <Text style={styles.cardMeta}>Project {item.project_id}</Text>
-              ) : null}
-            </View>
+            {item.task_id ? (
+              <Text style={styles.cardMetaRowText}>
+                {(item.project_id
+                  ? clientNameById.get(projectById.get(item.project_id)?.client_id ?? 0)
+                  : clientNameById.get(
+                      projectById.get(taskById.get(item.task_id)?.project_id ?? 0)?.client_id ??
+                        0,
+                    )) || 'Unassigned'}{' '}
+                - {taskNameById.get(item.task_id) ?? `#${item.task_id}`}
+              </Text>
+            ) : null}
             <View style={styles.cardActions}>
               <Pressable
                 style={[styles.actionButton, styles.editButton]}
@@ -248,16 +327,10 @@ const styles = StyleSheet.create({
     color: '#3e4c59',
     marginBottom: 8,
   },
-  cardMetaRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  cardMetaItem: {
-    marginRight: 12,
-  },
-  cardMeta: {
+  cardMetaRowText: {
     color: '#8c8577',
     fontSize: 12,
+    marginBottom: 12,
   },
   cardActions: {
     flexDirection: 'row',

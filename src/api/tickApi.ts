@@ -20,12 +20,18 @@ export type EntryPayload = {
 export type TickProject = {
   id: number;
   name: string;
+  client_id?: number;
 };
 
 export type TickTask = {
   id: number;
   name: string;
   project_id?: number;
+};
+
+export type TickClient = {
+  id: number;
+  name: string;
 };
 
 function buildHeaders(apiKey: string) {
@@ -124,4 +130,8 @@ export async function getProjects(settings: AppSettings): Promise<TickProject[]>
 
 export async function getTasks(settings: AppSettings): Promise<TickTask[]> {
   return request<TickTask[]>(settings, '/tasks.json');
+}
+
+export async function getClients(settings: AppSettings): Promise<TickClient[]> {
+  return request<TickClient[]>(settings, '/clients.json');
 }
