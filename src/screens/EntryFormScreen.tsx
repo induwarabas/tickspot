@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EntriesStackParamList } from '../navigation/RootNavigator';
 import {
@@ -22,7 +23,7 @@ import {
   updateEntry,
 } from '../api/tickApi';
 import { useSettings } from '../context/SettingsContext';
-import SelectField, { SelectOption } from '../components/SelectField';
+import ChipSelect, { ChipOption } from '../components/ChipSelect';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
@@ -36,7 +37,10 @@ export default function EntryFormScreen({ navigation, route }: Props) {
   const entry = route.params?.entry;
 
   const [date, setDate] = useState(entry?.date ?? todayString());
-  const [hours, setHours] = useState(entry?.hours?.toString() ?? '');
+  const [hours, setHours] = useState(() => {
+    const initial = Number(entry?.hours ?? 0);
+    return Number.isFinite(initial) ? initial : 0;
+  });
   const [notes, setNotes] = useState(entry?.notes ?? '');
   const [projectId, setProjectId] = useState<number | null>(entry?.project_id ?? null);
   const [taskId, setTaskId] = useState<number | null>(entry?.task_id ?? null);
@@ -49,10 +53,9 @@ export default function EntryFormScreen({ navigation, route }: Props) {
   const title = isEditing ? 'Update Entry' : 'New Entry';
 
   const payload = useMemo(() => {
-    const parsedHours = Number(hours);
     return {
       date,
-      hours: Number.isFinite(parsedHours) ? parsedHours : 0,
+      hours: Number.isFinite(hours) ? hours : 0,
       notes: notes.trim() || undefined,
       task_id: taskId ?? undefined,
       project_id: projectId ?? undefined,
@@ -180,19 +183,29 @@ export default function EntryFormScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Hours</Text>
-          <TextInput
-            style={styles.input}
+          <View style={styles.sliderHeader}>
+            <Text style={styles.label}>Hours</Text>
+            <Text style={styles.sliderValue}>{hours.toFixed(2)}h</Text>
+          </View>
+          <Slider
+            style={styles.slider}
+            minimumValue={0}
+            maximumValue={12}
+            step={0.25}
             value={hours}
-            onChangeText={setHours}
-            placeholder="1.5"
-            keyboardType="decimal-pad"
+            onValueChange={setHours}
+            minimumTrackTintColor="#1f2933"
+            maximumTrackTintColor="#d7d1c6"
+            thumbTintColor="#1f2933"
           />
+          <View style={styles.sliderLegendRow}>
+            <Text style={styles.sliderLegend}>0h</Text>
+            <Text style={styles.sliderLegend}>12h</Text>
+          </View>
         </View>
 
-        <SelectField
+        <ChipSelect
           label="Project"
-          placeholder="Select project"
           value={projectId}
           options={projectOptions}
           onChange={(value) => {
@@ -210,9 +223,8 @@ export default function EntryFormScreen({ navigation, route }: Props) {
           }
         />
 
-        <SelectField
+        <ChipSelect
           label="Task"
-          placeholder={projectId ? 'Select task' : 'Select task (optional)'}
           value={taskId}
           options={taskOptions}
           onChange={setTaskId}
@@ -290,6 +302,27 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#e3ded4',
+  },
+  sliderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  sliderValue: {
+    color: '#1f2933',
+    fontWeight: '700',
+  },
+  slider: {
+    height: 36,
+  },
+  sliderLegendRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  sliderLegend: {
+    color: '#8c8577',
+    fontSize: 12,
   },
   notesInput: {
     minHeight: 120,
