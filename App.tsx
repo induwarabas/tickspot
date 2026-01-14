@@ -5,6 +5,7 @@ import { enableScreens } from 'react-native-screens';
 import RootNavigator from './src/navigation/RootNavigator';
 import { SettingsProvider } from './src/context/SettingsContext';
 import ReminderScheduler from './src/notifications/ReminderScheduler';
+import { EntryDateProvider } from './src/context/EntryDateContext';
 
 enableScreens();
 
@@ -16,7 +17,9 @@ function App() {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <SettingsProvider>
         <ReminderScheduler />
-        <RootNavigator />
+        <EntryDateProvider>
+          <RootNavigator />
+        </EntryDateProvider>
       </SettingsProvider>
     </SafeAreaProvider>
   );

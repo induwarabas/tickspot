@@ -101,10 +101,14 @@ export async function getEntriesByDate(
 }
 
 export async function createEntry(settings: AppSettings, payload: EntryPayload): Promise<TickEntry> {
-  return request<TickEntry>(settings, '/entries.json', {
+  const result = await request<TickEntry | null>(settings, '/entries.json', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  if (!result || typeof result !== 'object' || !('id' in result)) {
+    throw new Error('Create failed: unexpected response from server.');
+  }
+  return result as TickEntry;
 }
 
 export async function updateEntry(
@@ -112,10 +116,14 @@ export async function updateEntry(
   id: number,
   payload: EntryPayload,
 ): Promise<TickEntry> {
-  return request<TickEntry>(settings, `/entries/${id}.json`, {
+  const result = await request<TickEntry | null>(settings, `/entries/${id}.json`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
+  if (!result || typeof result !== 'object' || !('id' in result)) {
+    throw new Error('Update failed: unexpected response from server.');
+  }
+  return result as TickEntry;
 }
 
 export async function deleteEntry(settings: AppSettings, id: number): Promise<void> {

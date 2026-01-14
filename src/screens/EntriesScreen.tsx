@@ -23,6 +23,7 @@ import {
   TickTask,
 } from '../api/tickApi';
 import { useSettings } from '../context/SettingsContext';
+import { useEntryDate } from '../context/EntryDateContext';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
@@ -40,6 +41,7 @@ type Props = NativeStackScreenProps<EntriesStackParamList, 'Entries'>;
 
 export default function EntriesScreen({ navigation }: Props) {
   const { settings, isReady } = useSettings();
+  const { setDate: setSharedDate } = useEntryDate();
   const [date, setDate] = useState(todayString());
   const [entries, setEntries] = useState<TickEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,12 +75,19 @@ export default function EntriesScreen({ navigation }: Props) {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable style={styles.headerAction} onPress={() => navigation.navigate('EntryForm')}>
+        <Pressable
+          style={styles.headerAction}
+          onPress={() => navigation.navigate('EntryForm', { date })}
+        >
           <Text style={styles.headerActionText}>New</Text>
         </Pressable>
       ),
     });
-  }, [navigation]);
+  }, [navigation, date]);
+
+  React.useEffect(() => {
+    setSharedDate(date);
+  }, [date, setSharedDate]);
 
   useFocusEffect(
     useCallback(() => {

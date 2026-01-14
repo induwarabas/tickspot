@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Slider from '@react-native-community/slider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EntriesStackParamList } from '../navigation/RootNavigator';
@@ -30,14 +31,24 @@ const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
   `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 const todayString = () => formatLocalDate(new Date());
+const parseLocalDate = (value: string) => {
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) {
+    return new Date();
+  }
+  return new Date(year, month - 1, day);
+};
 
 type Props = NativeStackScreenProps<EntriesStackParamList, 'EntryForm'>;
 
 export default function EntryFormScreen({ navigation, route }: Props) {
   const { settings, isReady } = useSettings();
   const entry = route.params?.entry;
+  const defaultDate = route.params?.date;
 
-  const [date, setDate] = useState(entry?.date ?? todayString());
+  const [date, setDate] = useState(entry?.date ?? defaultDate ?? todayString());
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [datePickerDate, setDatePickerDate] = useState(parseLocalDate(date));
   const [hours, setHours] = useState(() => {
     const initial = Number(entry?.hours ?? 0);
     return Number.isFinite(initial) ? initial : 0;
@@ -202,13 +213,15 @@ export default function EntryFormScreen({ navigation, route }: Props) {
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
-            value={date}
-            onChangeText={setDate}
-            autoCapitalize="none"
-            placeholder="2024-01-30"
-          />
+          <Pressable
+            style={[styles.input, styles.datePickerButton]}
+            onPress={() => {
+              setDatePickerDate(parseLocalDate(date));
+              setDatePickerVisible(true);
+            }}
+          >
+            <Text style={styles.dateText}>{date}</Text>
+          </Pressable>
         </View>
 
         <View style={styles.fieldGroup}>
@@ -309,6 +322,52 @@ export default function EntryFormScreen({ navigation, route }: Props) {
           </Pressable>
         ) : null}
       </ScrollView>
+
+      {datePickerVisible && Platform.OS === 'android' ? (
+        <DateTimePicker
+          value={datePickerDate}
+          mode="date"
+          display="default"
+          onChange={(event, nextDate) => {
+            setDatePickerVisible(false);
+            if (event.type !== 'set' || !nextDate) {
+              return;
+            }
+            setDate(formatLocalDate(nextDate));
+          }}
+        />
+      ) : null}
+
+      {datePickerVisible && Platform.OS === 'ios' ? (
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerCard}>
+            <DateTimePicker
+              value={datePickerDate}
+              mode="date"
+              display="spinner"
+              onChange={(_, nextDate) => {
+                if (nextDate) {
+                  setDatePickerDate(nextDate);
+                }
+              }}
+            />
+            <View style={styles.pickerActions}>
+              <Pressable style={styles.pickerCancel} onPress={() => setDatePickerVisible(false)}>
+                <Text style={styles.pickerCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={styles.pickerDone}
+                onPress={() => {
+                  setDate(formatLocalDate(datePickerDate));
+                  setDatePickerVisible(false);
+                }}
+              >
+                <Text style={styles.pickerDoneText}>Done</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
@@ -348,6 +407,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#e3ded4',
+  },
+  datePickerButton: {
+    justifyContent: 'center',
+  },
+  dateText: {
+    color: '#1f2933',
+    fontWeight: '600',
   },
   sliderHeader: {
     flexDirection: 'row',
@@ -426,6 +492,44 @@ const styles = StyleSheet.create({
   notesInput: {
     minHeight: 120,
     textAlignVertical: 'top',
+  },
+  pickerOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    padding: 16,
+  },
+  pickerCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+  },
+  pickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  pickerCancel: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#f0ede6',
+  },
+  pickerCancelText: {
+    color: '#1f2933',
+    fontWeight: '600',
+  },
+  pickerDone: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#1f2933',
+  },
+  pickerDoneText: {
+    color: '#f9f5ee',
+    fontWeight: '600',
   },
   primaryButton: {
     backgroundColor: '#1f2933',

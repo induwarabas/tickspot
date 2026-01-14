@@ -7,10 +7,11 @@ import EntriesScreen from '../screens/EntriesScreen';
 import EntryFormScreen from '../screens/EntryFormScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { TickEntry } from '../api/tickApi';
+import { useEntryDate } from '../context/EntryDateContext';
 
 export type EntriesStackParamList = {
   Entries: undefined;
-  EntryForm: { entry?: TickEntry } | undefined;
+  EntryForm: { entry?: TickEntry; date?: string } | undefined;
 };
 
 export type RootTabParamList = {
@@ -33,13 +34,17 @@ function EntriesStack() {
 
 function CreateEntryButton() {
   const navigation = useNavigation();
+  const { date } = useEntryDate();
 
   return (
     <View style={styles.createButtonContainer}>
       <Pressable
         style={styles.createButton}
         onPress={() => {
-          navigation.navigate('EntriesStack' as never, { screen: 'EntryForm' } as never);
+          navigation.navigate(
+            'EntriesStack' as never,
+            { screen: 'EntryForm', params: { date } } as never,
+          );
         }}
       >
         <Text style={styles.createButtonText}>+</Text>
