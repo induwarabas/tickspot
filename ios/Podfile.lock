@@ -2036,6 +2036,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-vector-icons-feather (12.4.0)
   - React-NativeModulesApple (0.83.1):
     - boost
     - DoubleConversion
@@ -2792,6 +2793,7 @@ DEPENDENCIES:
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
+  - "react-native-vector-icons-feather (from `../node_modules/@react-native-vector-icons/feather`)"
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-networking (from `../node_modules/react-native/ReactCommon/react/networking`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
@@ -2929,6 +2931,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-slider:
     :path: "../node_modules/@react-native-community/slider"
+  react-native-vector-icons-feather:
+    :path: "../node_modules/@react-native-vector-icons/feather"
   React-NativeModulesApple:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios"
   React-networking:
@@ -3054,6 +3058,7 @@ SPEC CHECKSUMS:
   React-microtasksnativemodule: 1a5a9488d2a05c74ea276c2012df632d8221d169
   react-native-safe-area-context: fea29ae0275beaa22f72d0a8be1eb0ab09c3feae
   react-native-slider: 7485779ce4017e00a07bf852ca0e99219a706b99
+  react-native-vector-icons-feather: b0c81b5240bc89ba1546220b694fc5f7b660258d
   React-NativeModulesApple: dfce21d2c4b7eab44db0af861fcb8998d0b8ad16
   React-networking: 26355121d0bf86d974dff5a3cc11f8aeb9f28a22
   React-oscompat: 80166b66da22e7af7fad94474e9997bd52d4c8c6

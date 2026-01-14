@@ -8,6 +8,7 @@ import EntryFormScreen from '../screens/EntryFormScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { TickEntry } from '../api/tickApi';
 import { useEntryDate } from '../context/EntryDateContext';
+import Feather from '@react-native-vector-icons/feather';
 
 export type EntriesStackParamList = {
   Entries: undefined;
@@ -64,7 +65,11 @@ export default function RootNavigator() {
         <Tab.Screen
           name="EntriesStack"
           component={EntriesStack}
-          options={{ title: 'Entries', headerShown: false }}
+          options={{
+            title: 'Entries',
+            headerShown: false,
+            tabBarIcon: ({ color, size }) => <Feather name="list" color={color} size={size} />,
+          }}
         />
         <Tab.Screen
           name="CreateEntry"
@@ -75,7 +80,14 @@ export default function RootNavigator() {
             tabBarButton: () => <CreateEntryButton />,
           }}
         />
-        <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            title: 'Settings',
+            tabBarIcon: ({ color, size }) => <Feather name="settings" color={color} size={size} />,
+          }}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
