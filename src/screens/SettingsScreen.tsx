@@ -99,6 +99,7 @@ export default function SettingsScreen() {
             onChangeText={setApiKey}
             autoCapitalize="none"
             placeholder="Your API key"
+            secureTextEntry
           />
           <Text style={styles.helperText}>
             This key is stored locally on the device.
