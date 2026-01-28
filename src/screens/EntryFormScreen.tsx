@@ -155,9 +155,9 @@ export default function EntryFormScreen({ navigation, route }: Props) {
   const rulerConfig: RulerConfig = useMemo(
     () => ({
       start: 0,
-      end: 12,
+      end: 24,
       major: 1,
-      minor: [12, 18, 12, 18, 12],
+      minor: [24, 12, 12, 18, 12, 12, 18, 12, 12, 18, 12, 12],
       width: 12,
       renderValue: () => formattedHours,
     }),
@@ -241,7 +241,9 @@ export default function EntryFormScreen({ navigation, route }: Props) {
             <Text style={styles.label}>Hours</Text>
             <Text style={styles.sliderValue}>{formattedHours}</Text>
           </View>
-          <RulerPicker value={hours} onChange={setHours} config={rulerConfig} />
+          <View style={styles.fullBleed}>
+            <RulerPicker value={hours} onChange={setHours} config={rulerConfig} />
+          </View>
         </View>
 
         <View style={styles.fieldGroup}>
@@ -422,6 +424,9 @@ const styles = StyleSheet.create({
   sliderValue: {
     color: '#1f2933',
     fontWeight: '700',
+  },
+  fullBleed: {
+    marginHorizontal: -20,
   },
   taskHeaderRow: {
     flexDirection: 'row',

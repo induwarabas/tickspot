@@ -119,6 +119,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 120,
+    width: '100%',
   },
   scrollStyle: {
     alignItems: 'flex-end',
