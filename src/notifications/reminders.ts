@@ -1,4 +1,10 @@
-import notifee, { AndroidImportance, RepeatFrequency, TriggerType } from '@notifee/react-native';
+import notifee, {
+  AndroidImportance,
+  RepeatFrequency,
+  TriggerType,
+  AndroidVisibility,
+  AndroidCategory,
+} from '@notifee/react-native';
 import { AppSettings } from '../storage/settings';
 
 const CHANNEL_ID = 'tickspot-reminders';
@@ -35,7 +41,10 @@ async function ensureChannel() {
   await notifee.createChannel({
     id: CHANNEL_ID,
     name: 'TickSpot Reminders',
-    importance: AndroidImportance.DEFAULT,
+    importance: AndroidImportance.HIGH,
+    sound: 'default',
+    vibration: true,
+    visibility: AndroidVisibility.PUBLIC,
   });
 }
 
@@ -68,7 +77,15 @@ export async function configureWeekdayReminders(settings: AppSettings) {
           body: 'Enter ticks',
           android: {
             channelId: CHANNEL_ID,
+            category: AndroidCategory.REMINDER,
+            importance: AndroidImportance.HIGH,
+            sound: 'default',
+            vibrationPattern: [300, 300],
             pressAction: { id: 'default' },
+          },
+          ios: {
+            sound: 'default',
+            interruptionLevel: 'timeSensitive',
           },
         },
         {

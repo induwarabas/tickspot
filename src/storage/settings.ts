@@ -8,7 +8,7 @@ export type AppSettings = {
 };
 
 const SETTINGS_KEY = 'tickspot.settings.v1';
-const DEFAULT_BASE_URL = 'https://yaala-labs.tickspot.com/api/v2';
+const DEFAULT_BASE_URL = 'https://yaala-labs.tickspot.com/108063/api/v2';
 
 export function buildDefaultSettings(): AppSettings {
   return {
