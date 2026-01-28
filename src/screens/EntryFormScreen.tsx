@@ -157,7 +157,7 @@ export default function EntryFormScreen({ navigation, route }: Props) {
       start: 0,
       end: 24,
       major: 1,
-      minor: [24, 12, 12, 18, 12, 12, 18, 12, 12, 18, 12, 12],
+      minor: [36, 18, 18, 24, 18, 18, 30, 18, 18, 24, 18, 18],
       width: 12,
       renderValue: () => formattedHours,
     }),
@@ -548,6 +548,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#f3b4b4',
+    marginTop: 10,
   },
   footer: {
     padding: 20,

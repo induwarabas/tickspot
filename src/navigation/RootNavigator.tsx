@@ -12,7 +12,6 @@ import Feather from '@react-native-vector-icons/feather';
 
 export type EntriesStackParamList = {
   Entries: undefined;
-  EntryForm: { entry?: TickEntry; date?: string } | undefined;
 };
 
 export type RootTabParamList = {
@@ -21,14 +20,19 @@ export type RootTabParamList = {
   Settings: undefined;
 };
 
+export type RootStackParamList = {
+  Tabs: undefined;
+  EntryForm: { entry?: TickEntry; date?: string } | undefined;
+};
+
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<EntriesStackParamList>();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 function EntriesStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Entries" component={EntriesScreen} options={{ title: 'Entries' }} />
-      <Stack.Screen name="EntryForm" component={EntryFormScreen} options={{ title: 'Entry' }} />
     </Stack.Navigator>
   );
 }
@@ -42,7 +46,7 @@ function CreateEntryButton() {
       <Pressable
         style={styles.createButton}
         onPress={() => {
-          navigation.navigate('EntriesStack' as never, { screen: 'EntryForm', params: { date } } as never);
+          navigation.getParent()?.navigate('EntryForm' as never, { date } as never);
         }}
       >
         <Text style={styles.createButtonText}>+</Text>
@@ -55,37 +59,50 @@ function EmptyScreen() {
   return <View style={styles.emptyScreen} />;
 }
 
+function Tabs() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen
+        name="EntriesStack"
+        component={EntriesStack}
+        options={{
+          title: 'Entries',
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => <Feather name="list" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="CreateEntry"
+        component={EmptyScreen}
+        options={{
+          title: '',
+          headerShown: false,
+          tabBarButton: () => <CreateEntryButton />,
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => <Feather name="settings" color={color} size={size} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
 export default function RootNavigator() {
   return (
     <NavigationContainer>
-      <Tab.Navigator>
-        <Tab.Screen
-          name="EntriesStack"
-          component={EntriesStack}
-          options={{
-            title: 'Entries',
-            headerShown: false,
-            tabBarIcon: ({ color, size }) => <Feather name="list" color={color} size={size} />,
-          }}
+      <RootStack.Navigator>
+        <RootStack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+        <RootStack.Screen
+          name="EntryForm"
+          component={EntryFormScreen}
+          options={{ title: 'Entry', presentation: 'modal' }}
         />
-        <Tab.Screen
-          name="CreateEntry"
-          component={EmptyScreen}
-          options={{
-            title: '',
-            headerShown: false,
-            tabBarButton: () => <CreateEntryButton />,
-          }}
-        />
-        <Tab.Screen
-          name="Settings"
-          component={SettingsScreen}
-          options={{
-            title: 'Settings',
-            tabBarIcon: ({ color, size }) => <Feather name="settings" color={color} size={size} />,
-          }}
-        />
-      </Tab.Navigator>
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 }

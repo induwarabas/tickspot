@@ -9,8 +9,9 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { EntriesStackParamList } from '../navigation/RootNavigator';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../navigation/RootNavigator';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   deleteEntry,
   getClients,
@@ -37,9 +38,10 @@ function shiftDate(value: string, days: number) {
   return formatLocalDate(next);
 }
 
-type Props = NativeStackScreenProps<EntriesStackParamList, 'Entries'>;
+type RootNav = NativeStackNavigationProp<RootStackParamList>;
 
-export default function EntriesScreen({ navigation }: Props) {
+export default function EntriesScreen() {
+  const navigation = useNavigation();
   const { settings, isReady } = useSettings();
   const { setDate: setSharedDate } = useEntryDate();
   const [date, setDate] = useState(todayString());
@@ -228,7 +230,12 @@ export default function EntriesScreen({ navigation }: Props) {
             <View style={styles.cardActions}>
               <Pressable
                 style={[styles.actionButton, styles.editButton]}
-                onPress={() => navigation.navigate('EntryForm', { entry: item })}
+                onPress={() =>
+                  (navigation.getParent()?.getParent() as RootNav | undefined)?.navigate(
+                    'EntryForm',
+                    { entry: item },
+                  )
+                }
               >
                 <Text style={styles.actionText}>Edit</Text>
               </Pressable>
