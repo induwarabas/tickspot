@@ -11,7 +11,6 @@ import {
   View,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Slider from '@react-native-community/slider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { EntriesStackParamList } from '../navigation/RootNavigator';
 import {
@@ -26,6 +25,7 @@ import {
   updateEntry,
 } from '../api/tickApi';
 import { useSettings } from '../context/SettingsContext';
+import RulerPicker, { RulerConfig } from '../components/RulerPicker';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
@@ -152,6 +152,18 @@ export default function EntryFormScreen({ navigation, route }: Props) {
     return `${hoursPart}h ${minutesPart.toString().padStart(2, '0')}m`;
   }, [hours]);
 
+  const rulerConfig: RulerConfig = useMemo(
+    () => ({
+      start: 0,
+      end: 12,
+      major: 1,
+      minor: [12, 18, 12, 18, 12],
+      width: 12,
+      renderValue: () => formattedHours,
+    }),
+    [formattedHours],
+  );
+
   const handleSave = async () => {
     if (!settings.apiKey) {
       Alert.alert('Missing API key', 'Add an API key in Settings before saving entries.');
@@ -229,21 +241,7 @@ export default function EntryFormScreen({ navigation, route }: Props) {
             <Text style={styles.label}>Hours</Text>
             <Text style={styles.sliderValue}>{formattedHours}</Text>
           </View>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={12}
-            step={1 / 12}
-            value={hours}
-            onValueChange={setHours}
-            minimumTrackTintColor="#1f2933"
-            maximumTrackTintColor="#d7d1c6"
-            thumbTintColor="#1f2933"
-          />
-          <View style={styles.sliderLegendRow}>
-            <Text style={styles.sliderLegend}>0h</Text>
-            <Text style={styles.sliderLegend}>12h</Text>
-          </View>
+          <RulerPicker value={hours} onChange={setHours} config={rulerConfig} />
         </View>
 
         <View style={styles.fieldGroup}>
@@ -424,17 +422,6 @@ const styles = StyleSheet.create({
   sliderValue: {
     color: '#1f2933',
     fontWeight: '700',
-  },
-  slider: {
-    height: 36,
-  },
-  sliderLegendRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sliderLegend: {
-    color: '#8c8577',
-    fontSize: 12,
   },
   taskHeaderRow: {
     flexDirection: 'row',
