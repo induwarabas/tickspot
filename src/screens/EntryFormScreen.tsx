@@ -164,14 +164,16 @@ export default function EntryFormScreen({ navigation, route }: Props) {
     [formattedHours],
   );
 
+  const canSave = Boolean(taskId);
+
   const handleSave = async () => {
     if (!settings.apiKey) {
       Alert.alert('Missing API key', 'Add an API key in Settings before saving entries.');
       return;
     }
 
-    if (!payload.date || payload.hours < 0) {
-      Alert.alert('Missing fields', 'Please enter a date and hours.');
+    if (!payload.date || payload.hours < 0 || !taskId) {
+      Alert.alert('Missing fields', 'Please select a task and enter a valid time.');
       return;
     }
 
@@ -315,9 +317,9 @@ export default function EntryFormScreen({ navigation, route }: Props) {
 
       <View style={styles.footer}>
         <Pressable
-          style={[styles.primaryButton, isSaving && styles.disabledButton]}
+          style={[styles.primaryButton, (isSaving || !canSave) && styles.disabledButton]}
           onPress={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || !canSave}
         >
           <Text style={styles.primaryButtonText}>{isEditing ? 'Update Entry' : 'Create Entry'}</Text>
         </Pressable>
