@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -72,23 +72,6 @@ export default function EntriesScreen({ navigation }: Props) {
     }
   }, [settings, date, isReady]);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <Pressable
-          style={styles.headerAction}
-          onPress={() => navigation.navigate('EntryForm', { date })}
-        >
-          <Text style={styles.headerActionText}>New</Text>
-        </Pressable>
-      ),
-    });
-  }, [navigation, date]);
-
-  React.useEffect(() => {
-    setSharedDate(date);
-  }, [date, setSharedDate]);
-
   useFocusEffect(
     useCallback(() => {
       fetchEntries();
@@ -101,31 +84,33 @@ export default function EntriesScreen({ navigation }: Props) {
         return;
       }
       let isMounted = true;
-      Promise.allSettled([
-        getProjects(settings),
-        getTasks(settings),
-        getClients(settings),
-      ]).then((results) => {
-        if (!isMounted) {
-          return;
-        }
-        const [projectsResult, tasksResult, clientsResult] = results;
-        if (projectsResult.status === 'fulfilled') {
-          setProjects(projectsResult.value);
-        }
-        if (tasksResult.status === 'fulfilled') {
-          setTasks(tasksResult.value);
-        }
-        if (clientsResult.status === 'fulfilled') {
-          setClients(clientsResult.value);
-        }
-      });
+      Promise.allSettled([getProjects(settings), getTasks(settings), getClients(settings)]).then(
+        (results) => {
+          if (!isMounted) {
+            return;
+          }
+          const [projectsResult, tasksResult, clientsResult] = results;
+          if (projectsResult.status === 'fulfilled') {
+            setProjects(projectsResult.value);
+          }
+          if (tasksResult.status === 'fulfilled') {
+            setTasks(tasksResult.value);
+          }
+          if (clientsResult.status === 'fulfilled') {
+            setClients(clientsResult.value);
+          }
+        },
+      );
 
       return () => {
         isMounted = false;
       };
     }, [isReady, settings]),
   );
+
+  React.useEffect(() => {
+    setSharedDate(date);
+  }, [date, setSharedDate]);
 
   const totalHours = useMemo(
     () => entries.reduce((sum, entry) => sum + Number(entry.hours || 0), 0),
@@ -341,6 +326,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 12,
   },
+  cardMeta: {
+    color: '#8c8577',
+    fontSize: 12,
+  },
   cardActions: {
     flexDirection: 'row',
   },
@@ -361,16 +350,6 @@ const styles = StyleSheet.create({
   },
   actionText: {
     color: '#1f2933',
-    fontWeight: '600',
-  },
-  headerAction: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#1f2933',
-    borderRadius: 16,
-  },
-  headerActionText: {
-    color: '#f9f5ee',
     fontWeight: '600',
   },
 });

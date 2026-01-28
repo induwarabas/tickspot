@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { EntriesStackParamList } from '../navigation/RootNavigator';
+import { RootStackParamList } from '../navigation/RootNavigator';
 import {
   createEntry,
   deleteEntry,
@@ -39,7 +39,7 @@ const parseLocalDate = (value: string) => {
   return new Date(year, month - 1, day);
 };
 
-type Props = NativeStackScreenProps<EntriesStackParamList, 'EntryForm'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'EntryForm'>;
 
 export default function EntryFormScreen({ navigation, route }: Props) {
   const { settings, isReady } = useSettings();
@@ -220,7 +220,10 @@ export default function EntryFormScreen({ navigation, route }: Props) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.title}>{title}</Text>
 
         <View style={styles.fieldGroup}>
@@ -308,6 +311,9 @@ export default function EntryFormScreen({ navigation, route }: Props) {
           />
         </View>
 
+      </ScrollView>
+
+      <View style={styles.footer}>
         <Pressable
           style={[styles.primaryButton, isSaving && styles.disabledButton]}
           onPress={handleSave}
@@ -321,7 +327,7 @@ export default function EntryFormScreen({ navigation, route }: Props) {
             <Text style={styles.deleteButtonText}>Delete Entry</Text>
           </Pressable>
         ) : null}
-      </ScrollView>
+      </View>
 
       {datePickerVisible && Platform.OS === 'android' ? (
         <DateTimePicker
@@ -379,7 +385,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 32,
+    paddingBottom: 140,
   },
   title: {
     fontSize: 22,
@@ -528,7 +534,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 999,
     alignItems: 'center',
-    marginTop: 8,
   },
   primaryButtonText: {
     color: '#f9f5ee',
@@ -543,7 +548,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#f3b4b4',
-    marginTop: 8,
+  },
+  footer: {
+    padding: 20,
+    paddingBottom: 28,
+    backgroundColor: '#f7f5f0',
+    borderTopWidth: 1,
+    borderTopColor: '#e3ded4',
   },
   deleteButtonText: {
     color: '#b42318',

@@ -42,10 +42,7 @@ function CreateEntryButton() {
       <Pressable
         style={styles.createButton}
         onPress={() => {
-          navigation.navigate(
-            'EntriesStack' as never,
-            { screen: 'EntryForm', params: { date } } as never,
-          );
+          navigation.navigate('EntriesStack' as never, { screen: 'EntryForm', params: { date } } as never);
         }}
       >
         <Text style={styles.createButtonText}>+</Text>
