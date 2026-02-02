@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useFocusEffect } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -210,43 +211,42 @@ export default function EntriesScreen() {
           </Text>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardHours}>{formatHours(Number(item.hours || 0))}</Text>
-              <Text style={styles.cardMeta}>#{item.id}</Text>
-            </View>
-            <Text style={styles.cardNotes}>{item.notes || 'No notes provided.'}</Text>
-            {item.task_id ? (
-              <Text style={styles.cardMetaRowText}>
-                {(item.project_id
-                  ? clientNameById.get(projectById.get(item.project_id)?.client_id ?? 0)
-                  : clientNameById.get(
-                      projectById.get(taskById.get(item.task_id)?.project_id ?? 0)?.client_id ??
-                        0,
-                    )) || 'Unassigned'}{' '}
-                - {taskNameById.get(item.task_id) ?? `#${item.task_id}`}
+          <Swipeable
+            renderRightActions={() => (
+              <Pressable style={styles.swipeDelete} onPress={() => handleDelete(item)}>
+                <Text style={styles.swipeDeleteText}>Delete</Text>
+              </Pressable>
+            )}
+          >
+            <Pressable
+              style={styles.card}
+              onPress={() =>
+                (navigation.getParent()?.getParent() as RootNav | undefined)?.navigate(
+                  'EntryForm',
+                  { entry: item },
+                )
+              }
+            >
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardHours}>{formatHours(Number(item.hours || 0))}</Text>
+                <Text style={styles.cardMeta}>#{item.id}</Text>
+              </View>
+              <Text style={styles.cardNotes} numberOfLines={1}>
+                {item.notes || 'No notes provided.'}
               </Text>
-            ) : null}
-            <View style={styles.cardActions}>
-              <Pressable
-                style={[styles.actionButton, styles.editButton]}
-                onPress={() =>
-                  (navigation.getParent()?.getParent() as RootNav | undefined)?.navigate(
-                    'EntryForm',
-                    { entry: item },
-                  )
-                }
-              >
-                <Text style={styles.actionText}>Edit</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.actionButton, styles.deleteButton, styles.actionButtonLast]}
-                onPress={() => handleDelete(item)}
-              >
-                <Text style={styles.actionText}>Delete</Text>
-              </Pressable>
-            </View>
-          </View>
+              {item.task_id ? (
+                <Text style={styles.cardMetaRowText} numberOfLines={1}>
+                  {(item.project_id
+                    ? clientNameById.get(projectById.get(item.project_id)?.client_id ?? 0)
+                    : clientNameById.get(
+                        projectById.get(taskById.get(item.task_id)?.project_id ?? 0)?.client_id ??
+                          0,
+                      )) || 'Unassigned'}{' '}
+                  - {taskNameById.get(item.task_id) ?? `#${item.task_id}`}
+                </Text>
+              ) : null}
+            </Pressable>
+          </Swipeable>
         )}
       />
     </View>
@@ -256,7 +256,6 @@ export default function EntriesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#f7f5f0',
   },
   dateRow: {
@@ -265,6 +264,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     marginBottom: 12,
+    paddingHorizontal: 16,
   },
   dateButton: {
     paddingHorizontal: 12,
@@ -291,6 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fce8e6',
     borderRadius: 8,
     marginBottom: 12,
+    marginHorizontal: 16,
   },
   errorText: {
     color: '#b42318',
@@ -305,14 +306,10 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#efeae1',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -337,26 +334,14 @@ const styles = StyleSheet.create({
     color: '#8c8577',
     fontSize: 12,
   },
-  cardActions: {
-    flexDirection: 'row',
+  swipeDelete: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 90,
+    backgroundColor: '#e11d48',
   },
-  actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    marginRight: 12,
-  },
-  actionButtonLast: {
-    marginRight: 0,
-  },
-  editButton: {
-    backgroundColor: '#e6f4ff',
-  },
-  deleteButton: {
-    backgroundColor: '#fde2e2',
-  },
-  actionText: {
-    color: '#1f2933',
-    fontWeight: '600',
+  swipeDeleteText: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
 });

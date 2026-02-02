@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
     height: 20,
     width: 1,
-    backgroundColor: '#5487c5',
+    backgroundColor: '#000000',
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     position: 'absolute',
     fontSize: 14,
-    color: '#5487c5',
+    color: '#000000',
     width: 50,
     height: 20,
   },
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginVertical: 10,
     fontWeight: 'bold',
-    color: '#5487c5',
+    color: '#000000',
   },
 });
 
