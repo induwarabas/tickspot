@@ -228,23 +228,28 @@ export default function EntriesScreen() {
               }
             >
               <View style={styles.cardHeader}>
+                <View style={styles.cardLeft}>
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {taskNameById.get(item.task_id ?? 0) ?? 'No task'}
+                  </Text>
+                  <Text style={styles.cardSubtitle} numberOfLines={1}>
+                    {(item.project_id
+                      ? clientNameById.get(projectById.get(item.project_id)?.client_id ?? 0)
+                      : clientNameById.get(
+                          projectById.get(taskById.get(item.task_id)?.project_id ?? 0)?.client_id ??
+                            0,
+                        )) || 'Unassigned'}{' '}
+                    -{' '}
+                    {projectById.get(
+                      item.project_id ?? taskById.get(item.task_id ?? 0)?.project_id ?? 0,
+                    )?.name ?? 'No project'}
+                  </Text>
+                </View>
                 <Text style={styles.cardHours}>{formatHours(Number(item.hours || 0))}</Text>
-                <Text style={styles.cardMeta}>#{item.id}</Text>
               </View>
               <Text style={styles.cardNotes} numberOfLines={1}>
                 {item.notes || 'No notes provided.'}
               </Text>
-              {item.task_id ? (
-                <Text style={styles.cardMetaRowText} numberOfLines={1}>
-                  {(item.project_id
-                    ? clientNameById.get(projectById.get(item.project_id)?.client_id ?? 0)
-                    : clientNameById.get(
-                        projectById.get(taskById.get(item.task_id)?.project_id ?? 0)?.client_id ??
-                          0,
-                      )) || 'Unassigned'}{' '}
-                  - {taskNameById.get(item.task_id) ?? `#${item.task_id}`}
-                </Text>
-              ) : null}
             </Pressable>
           </Swipeable>
         )}
@@ -315,24 +320,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 6,
+    alignItems: 'flex-start',
+  },
+  cardLeft: {
+    flex: 1,
+    marginRight: 10,
+  },
+  cardTitle: {
+    color: '#1f2933',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   cardHours: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#1f2933',
   },
-  cardNotes: {
+  cardSubtitle: {
     color: '#3e4c59',
-    marginBottom: 8,
+    marginBottom: 2,
   },
-  cardMetaRowText: {
+  cardNotes: {
     color: '#8c8577',
-    fontSize: 12,
-    marginBottom: 12,
-  },
-  cardMeta: {
-    color: '#8c8577',
-    fontSize: 12,
   },
   swipeDelete: {
     justifyContent: 'center',
