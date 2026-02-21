@@ -14,6 +14,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSettings } from '../context/SettingsContext';
 import { configureWeekdayReminders, validateReminderTimes } from '../notifications/reminders';
+import { useAppTheme } from '../theme/useAppTheme';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 
@@ -30,6 +31,7 @@ function parseTimeString(value: string) {
 
 export default function SettingsScreen() {
   const { settings, save } = useSettings();
+  const { colors } = useAppTheme();
   const [apiKey, setApiKey] = useState(settings.apiKey);
   const [baseUrl, setBaseUrl] = useState(settings.baseUrl);
   const [reminderEnabled, setReminderEnabled] = useState(settings.reminderEnabled);
@@ -85,107 +87,117 @@ export default function SettingsScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Settings</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Settings</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>API Key</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>API Key</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
             value={apiKey}
             onChangeText={setApiKey}
             autoCapitalize="none"
             placeholder="Your API key"
             secureTextEntry
           />
-          <Text style={styles.helperText}>
+          <Text style={[styles.helperText, { color: colors.textMuted }]}>
             This key is stored locally on the device.
           </Text>
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Base URL</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Base URL</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
             value={baseUrl}
             onChangeText={setBaseUrl}
             autoCapitalize="none"
             placeholder="https://www.tickspot.com/api/v2"
           />
-          <Text style={styles.helperText}>
+          <Text style={[styles.helperText, { color: colors.textMuted }]}>
             Update if your TickSpot account uses a custom host.
           </Text>
         </View>
 
         <View style={styles.sectionDivider} />
 
-        <Text style={styles.sectionTitle}>Reminders</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Reminders</Text>
 
         <View style={styles.rowBetween}>
-          <Text style={styles.label}>Weekday reminders</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Weekday reminders</Text>
           <Switch value={reminderEnabled} onValueChange={setReminderEnabled} />
         </View>
-        <Text style={styles.helperText}>
+        <Text style={[styles.helperText, { color: colors.textMuted }]}>
           Scheduled Monday to Friday. Defaults to 10:00, 17:00, 21:00.
         </Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Times (24h)</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Times (24h)</Text>
           {reminderTimes.map((time, index) => (
             <View key={`${time}-${index}`} style={styles.timeRow}>
               <Pressable
-                style={[styles.input, styles.timeInput, styles.timeButton]}
+                style={[
+                  styles.input,
+                  styles.timeInput,
+                  styles.timeButton,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
                 onPress={() => {
                   setPickerTarget({ mode: 'edit', index });
                   setPickerDate(parseTimeString(time));
                   setPickerVisible(true);
                 }}
               >
-                <Text style={styles.timeText}>{time}</Text>
+                <Text style={[styles.timeText, { color: colors.textPrimary }]}>{time}</Text>
               </Pressable>
               <Pressable
-                style={styles.removeButton}
+                style={[styles.removeButton, { backgroundColor: colors.dangerSoft }]}
                 onPress={() =>
                   setReminderTimes((current) => current.filter((_, itemIndex) => itemIndex !== index))
                 }
               >
-                <Text style={styles.removeButtonText}>Remove</Text>
+                <Text style={[styles.removeButtonText, { color: colors.danger }]}>Remove</Text>
               </Pressable>
             </View>
           ))}
           <View style={styles.timeRow}>
             <Pressable
-              style={[styles.input, styles.timeInput, styles.timeButton]}
+              style={[
+                styles.input,
+                styles.timeInput,
+                styles.timeButton,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
               onPress={() => {
                 setPickerTarget({ mode: 'add' });
                 setPickerDate(new Date());
                 setPickerVisible(true);
               }}
             >
-              <Text style={styles.timePlaceholder}>Add time</Text>
+              <Text style={[styles.timePlaceholder, { color: colors.textMuted }]}>Add time</Text>
             </Pressable>
             <Pressable
-              style={styles.addButton}
+              style={[styles.addButton, { backgroundColor: colors.infoSoft }]}
               onPress={() => {
                 setPickerTarget({ mode: 'add' });
                 setPickerDate(new Date());
                 setPickerVisible(true);
               }}
             >
-              <Text style={styles.addButtonText}>Pick</Text>
+              <Text style={[styles.addButtonText, { color: colors.textPrimary }]}>Pick</Text>
             </Pressable>
           </View>
         </View>
 
         <Pressable
-          style={[styles.primaryButton, isSaving && styles.disabledButton]}
+          style={[styles.primaryButton, { backgroundColor: colors.primary }, isSaving && styles.disabledButton]}
           onPress={handleSave}
           disabled={isSaving}
         >
-          <Text style={styles.primaryButtonText}>Save Settings</Text>
+          <Text style={[styles.primaryButtonText, { color: colors.primaryText }]}>Save Settings</Text>
         </Pressable>
       </ScrollView>
 
@@ -214,8 +226,8 @@ export default function SettingsScreen() {
       ) : null}
 
       {pickerVisible && Platform.OS === 'ios' ? (
-        <View style={styles.pickerOverlay}>
-          <View style={styles.pickerCard}>
+        <View style={[styles.pickerOverlay, { backgroundColor: colors.overlay }]}>
+          <View style={[styles.pickerCard, { backgroundColor: colors.surface }]}>
             <DateTimePicker
               value={pickerDate}
               mode="time"
@@ -228,11 +240,14 @@ export default function SettingsScreen() {
               }}
             />
             <View style={styles.pickerActions}>
-              <Pressable style={styles.pickerCancel} onPress={() => setPickerVisible(false)}>
-                <Text style={styles.pickerCancelText}>Cancel</Text>
+              <Pressable
+                style={[styles.pickerCancel, { backgroundColor: colors.surfaceAlt }]}
+                onPress={() => setPickerVisible(false)}
+              >
+                <Text style={[styles.pickerCancelText, { color: colors.textPrimary }]}>Cancel</Text>
               </Pressable>
               <Pressable
-                style={styles.pickerDone}
+                style={[styles.pickerDone, { backgroundColor: colors.primary }]}
                 onPress={() => {
                   if (!pickerTarget) {
                     setPickerVisible(false);
@@ -250,7 +265,7 @@ export default function SettingsScreen() {
                   setPickerVisible(false);
                 }}
               >
-                <Text style={styles.pickerDoneText}>Done</Text>
+                <Text style={[styles.pickerDoneText, { color: colors.primaryText }]}>Done</Text>
               </Pressable>
             </View>
           </View>

@@ -11,9 +11,11 @@ import {
   View,
 } from 'react-native';
 import { useSettings } from '../context/SettingsContext';
+import { useAppTheme } from '../theme/useAppTheme';
 
 export default function LoginScreen() {
   const { settings, save } = useSettings();
+  const { colors } = useAppTheme();
   const [apiKey, setApiKey] = useState(settings.apiKey);
   const [baseUrl, setBaseUrl] = useState(settings.baseUrl);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,19 +52,21 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.headerBlock}>
-          <Text style={styles.title}>TickSpot Login</Text>
-          <Text style={styles.subtitle}>Add your API key and login URL to continue.</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>TickSpot Login</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Add your API key and login URL to continue.
+          </Text>
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>API Key</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>API Key</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
             value={apiKey}
             onChangeText={setApiKey}
             autoCapitalize="none"
@@ -72,9 +76,9 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Login URL</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Login URL</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
             value={baseUrl}
             onChangeText={setBaseUrl}
             autoCapitalize="none"
@@ -83,11 +87,11 @@ export default function LoginScreen() {
         </View>
 
         <Pressable
-          style={[styles.primaryButton, isSaving && styles.disabledButton]}
+          style={[styles.primaryButton, { backgroundColor: colors.primary }, isSaving && styles.disabledButton]}
           onPress={handleLogin}
           disabled={isSaving}
         >
-          <Text style={styles.primaryButtonText}>Continue</Text>
+          <Text style={[styles.primaryButtonText, { color: colors.primaryText }]}>Continue</Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

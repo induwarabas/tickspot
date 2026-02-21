@@ -28,6 +28,7 @@ import { getCalendarSuggestions, SuggestedCalendarEntry } from '../calendar/even
 import { useSettings } from '../context/SettingsContext';
 import { useEntryDate } from '../context/EntryDateContext';
 import { loadMeetingTaskMap } from '../storage/meetingTaskMemory';
+import { useAppTheme } from '../theme/useAppTheme';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
@@ -50,6 +51,7 @@ type EntryListItem =
 export default function EntriesScreen() {
   const navigation = useNavigation();
   const { settings, isReady } = useSettings();
+  const { colors } = useAppTheme();
   const { setDate: setSharedDate } = useEntryDate();
   const [date, setDate] = useState(todayString());
   const [entries, setEntries] = useState<TickEntry[]>([]);
@@ -226,23 +228,29 @@ export default function EntriesScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.dateRow}>
-        <Pressable style={styles.dateButton} onPress={() => setDate(shiftDate(date, -1))}>
-          <Text style={styles.dateButtonText}>Prev</Text>
+        <Pressable
+          style={[styles.dateButton, { backgroundColor: colors.primary }]}
+          onPress={() => setDate(shiftDate(date, -1))}
+        >
+          <Text style={[styles.dateButtonText, { color: colors.primaryText }]}>Prev</Text>
         </Pressable>
         <View>
-          <Text style={styles.dateText}>{date}</Text>
-          <Text style={styles.totalText}>{`Total ${formatHours(totalHours)}`}</Text>
+          <Text style={[styles.dateText, { color: colors.textPrimary }]}>{date}</Text>
+          <Text style={[styles.totalText, { color: colors.textMuted }]}>{`Total ${formatHours(totalHours)}`}</Text>
         </View>
-        <Pressable style={styles.dateButton} onPress={() => setDate(shiftDate(date, 1))}>
-          <Text style={styles.dateButtonText}>Next</Text>
+        <Pressable
+          style={[styles.dateButton, { backgroundColor: colors.primary }]}
+          onPress={() => setDate(shiftDate(date, 1))}
+        >
+          <Text style={[styles.dateButtonText, { color: colors.primaryText }]}>Next</Text>
         </Pressable>
       </View>
 
       {error ? (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>{error}</Text>
+        <View style={[styles.errorBanner, { backgroundColor: colors.warningSoft }]}>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
         </View>
       ) : null}
 
@@ -254,7 +262,7 @@ export default function EntriesScreen() {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchEntries} />}
         contentContainerStyle={listItems.length === 0 ? styles.emptyList : undefined}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
             {!isReady
               ? 'Loading settings...'
               : loading
@@ -268,7 +276,11 @@ export default function EntriesScreen() {
             const mappedTaskId = meetingTaskMap[normalizeNote(suggestion.note)];
             return (
               <Pressable
-                style={[styles.card, styles.suggestionCard]}
+                style={[
+                  styles.card,
+                  styles.suggestionCard,
+                  { backgroundColor: colors.successSoft, borderBottomColor: colors.border },
+                ]}
                 onPress={() =>
                   (navigation.getParent()?.getParent() as RootNav | undefined)?.navigate(
                     'EntryForm',
@@ -283,18 +295,18 @@ export default function EntriesScreen() {
               >
                 <View style={styles.cardHeader}>
                   <View style={styles.cardLeft}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
+                    <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                       {suggestion.title}
                     </Text>
-                    <Text style={styles.suggestionSubtitle} numberOfLines={1}>
+                    <Text style={[styles.suggestionSubtitle, { color: colors.successText }]} numberOfLines={1}>
                       {suggestion.subtitle}
                     </Text>
                   </View>
-                  <Text style={[styles.cardHours, styles.suggestionHours]}>
+                  <Text style={[styles.cardHours, styles.suggestionHours, { color: colors.successText }]}>
                     {formatHours(suggestion.hours)}
                   </Text>
                 </View>
-                <Text style={styles.cardNotes} numberOfLines={1}>
+                <Text style={[styles.cardNotes, { color: colors.textMuted }]} numberOfLines={1}>
                   {suggestion.note}
                 </Text>
               </Pressable>
@@ -306,12 +318,12 @@ export default function EntriesScreen() {
             <Swipeable
               renderRightActions={() => (
                 <Pressable style={styles.swipeDelete} onPress={() => handleDelete(entry)}>
-                  <Text style={styles.swipeDeleteText}>Delete</Text>
+                  <Text style={[styles.swipeDeleteText, { color: colors.primaryText }]}>Delete</Text>
                 </Pressable>
               )}
             >
               <Pressable
-                style={styles.card}
+                style={[styles.card, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}
                 onPress={() =>
                   (navigation.getParent()?.getParent() as RootNav | undefined)?.navigate(
                     'EntryForm',
@@ -321,10 +333,10 @@ export default function EntriesScreen() {
               >
                 <View style={styles.cardHeader}>
                   <View style={styles.cardLeft}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
+                    <Text style={[styles.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                       {taskNameById.get(entry.task_id ?? 0) ?? 'No task'}
                     </Text>
-                    <Text style={styles.cardSubtitle} numberOfLines={1}>
+                    <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
                       {(entry.project_id
                         ? clientNameById.get(projectById.get(entry.project_id)?.client_id ?? 0)
                         : clientNameById.get(
@@ -337,9 +349,11 @@ export default function EntriesScreen() {
                       )?.name ?? 'No project'}
                     </Text>
                   </View>
-                  <Text style={styles.cardHours}>{formatHours(Number(entry.hours || 0))}</Text>
+                  <Text style={[styles.cardHours, { color: colors.textPrimary }]}>
+                    {formatHours(Number(entry.hours || 0))}
+                  </Text>
                 </View>
-                <Text style={styles.cardNotes} numberOfLines={1}>
+                <Text style={[styles.cardNotes, { color: colors.textMuted }]} numberOfLines={1}>
                   {entry.notes || 'No notes provided.'}
                 </Text>
               </Pressable>

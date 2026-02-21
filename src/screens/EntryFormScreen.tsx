@@ -27,6 +27,7 @@ import {
 import { useSettings } from '../context/SettingsContext';
 import RulerPicker, { RulerConfig } from '../components/RulerPicker';
 import { rememberTaskForMeetingNote } from '../storage/meetingTaskMemory';
+import { useAppTheme } from '../theme/useAppTheme';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
@@ -44,6 +45,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'EntryForm'>;
 
 export default function EntryFormScreen({ navigation, route }: Props) {
   const { settings, isReady } = useSettings();
+  const { colors } = useAppTheme();
   const entry = route.params?.entry;
   const defaultDate = route.params?.date;
   const prefillHours = route.params?.prefillHours;
@@ -165,8 +167,12 @@ export default function EntryFormScreen({ navigation, route }: Props) {
       minor: [36, 18, 18, 24, 18, 18, 30, 18, 18, 24, 18, 18],
       width: 12,
       renderValue: () => formattedHours,
+      markColor: colors.textMuted,
+      labelColor: colors.textSecondary,
+      indicatorColor: colors.primary,
+      valueColor: colors.textPrimary,
     }),
-    [formattedHours],
+    [formattedHours, colors],
   );
 
   const canSave = Boolean(taskId);
@@ -227,32 +233,36 @@ export default function EntryFormScreen({ navigation, route }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Date (YYYY-MM-DD)</Text>
           <Pressable
-            style={[styles.input, styles.datePickerButton]}
+            style={[
+              styles.input,
+              styles.datePickerButton,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
             onPress={() => {
               setDatePickerDate(parseLocalDate(date));
               setDatePickerVisible(true);
             }}
           >
-            <Text style={styles.dateText}>{date}</Text>
+            <Text style={[styles.dateText, { color: colors.textPrimary }]}>{date}</Text>
           </Pressable>
         </View>
 
         <View style={styles.fieldGroup}>
           <View style={styles.sliderHeader}>
             <Text style={styles.label}>Hours</Text>
-            <Text style={styles.sliderValue}>{formattedHours}</Text>
+            <Text style={[styles.sliderValue, { color: colors.textPrimary }]}>{formattedHours}</Text>
           </View>
           <View style={styles.fullBleed}>
             <RulerPicker value={hours} onChange={setHours} config={rulerConfig} />
@@ -264,41 +274,51 @@ export default function EntryFormScreen({ navigation, route }: Props) {
             <Text style={styles.label}>Task</Text>
             {taskId != null ? (
               <Pressable
-                style={styles.clearButton}
+                style={[styles.clearButton, { backgroundColor: colors.surfaceAlt }]}
                 onPress={() => {
                   setTaskId(null);
                   setProjectId(null);
                 }}
                 disabled={isLoadingLookups || !settings.apiKey}
               >
-                <Text style={styles.clearText}>Clear</Text>
+                <Text style={[styles.clearText, { color: colors.textPrimary }]}>Clear</Text>
               </Pressable>
             ) : null}
           </View>
           {!settings.apiKey ? (
-            <Text style={styles.helperText}>Add an API key in Settings to load tasks.</Text>
+            <Text style={[styles.helperText, { color: colors.textMuted }]}>Add an API key in Settings to load tasks.</Text>
           ) : isLoadingLookups ? (
-            <Text style={styles.helperText}>Loading tasks...</Text>
+            <Text style={[styles.helperText, { color: colors.textMuted }]}>Loading tasks...</Text>
           ) : tasks.length === 0 ? (
-            <Text style={styles.helperText}>No tasks available.</Text>
+            <Text style={[styles.helperText, { color: colors.textMuted }]}>No tasks available.</Text>
           ) : (
             tasksByProject.map((group) => (
               <View key={group.name} style={styles.taskGroup}>
-                <Text style={styles.groupTitle}>{group.name}</Text>
+                <Text style={[styles.groupTitle, { color: colors.textMuted }]}>{group.name}</Text>
                 <View style={styles.chipWrap}>
                   {group.list.map((task) => {
                     const isSelected = task.id === taskId;
                     return (
                       <Pressable
                         key={task.id}
-                        style={[styles.chip, isSelected && styles.chipSelected]}
+                        style={[
+                          styles.chip,
+                          { backgroundColor: colors.surface, borderColor: colors.border },
+                          isSelected && [styles.chipSelected, { backgroundColor: colors.primary, borderColor: colors.primary }],
+                        ]}
                         onPress={() => {
                           setTaskId(task.id);
                           setProjectId(task.project_id ?? null);
                         }}
                         disabled={isLoadingLookups}
                       >
-                        <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                        <Text
+                          style={[
+                            styles.chipText,
+                            { color: colors.textPrimary },
+                            isSelected && [styles.chipTextSelected, { color: colors.primaryText }],
+                          ]}
+                        >
                           {task.name}
                         </Text>
                       </Pressable>
@@ -311,9 +331,13 @@ export default function EntryFormScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Notes</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Notes</Text>
           <TextInput
-            style={[styles.input, styles.notesInput]}
+            style={[
+              styles.input,
+              styles.notesInput,
+              { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary },
+            ]}
             value={notes}
             onChangeText={setNotes}
             placeholder="What did you work on?"
@@ -323,18 +347,27 @@ export default function EntryFormScreen({ navigation, route }: Props) {
 
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
         <Pressable
-          style={[styles.primaryButton, (isSaving || !canSave) && styles.disabledButton]}
+          style={[
+            styles.primaryButton,
+            { backgroundColor: colors.primary },
+            (isSaving || !canSave) && styles.disabledButton,
+          ]}
           onPress={handleSave}
           disabled={isSaving || !canSave}
         >
-          <Text style={styles.primaryButtonText}>{isEditing ? 'Update Entry' : 'Create Entry'}</Text>
+          <Text style={[styles.primaryButtonText, { color: colors.primaryText }]}>
+            {isEditing ? 'Update Entry' : 'Create Entry'}
+          </Text>
         </Pressable>
 
         {isEditing ? (
-          <Pressable style={styles.deleteButton} onPress={handleDelete}>
-            <Text style={styles.deleteButtonText}>Delete Entry</Text>
+          <Pressable
+            style={[styles.deleteButton, { borderColor: colors.dangerSoft, backgroundColor: colors.surface }]}
+            onPress={handleDelete}
+          >
+            <Text style={[styles.deleteButtonText, { color: colors.danger }]}>Delete Entry</Text>
           </Pressable>
         ) : null}
       </View>
@@ -355,8 +388,8 @@ export default function EntryFormScreen({ navigation, route }: Props) {
       ) : null}
 
       {datePickerVisible && Platform.OS === 'ios' ? (
-        <View style={styles.pickerOverlay}>
-          <View style={styles.pickerCard}>
+        <View style={[styles.pickerOverlay, { backgroundColor: colors.overlay }]}>
+          <View style={[styles.pickerCard, { backgroundColor: colors.surface }]}>
             <DateTimePicker
               value={datePickerDate}
               mode="date"
@@ -368,17 +401,20 @@ export default function EntryFormScreen({ navigation, route }: Props) {
               }}
             />
             <View style={styles.pickerActions}>
-              <Pressable style={styles.pickerCancel} onPress={() => setDatePickerVisible(false)}>
-                <Text style={styles.pickerCancelText}>Cancel</Text>
+              <Pressable
+                style={[styles.pickerCancel, { backgroundColor: colors.surfaceAlt }]}
+                onPress={() => setDatePickerVisible(false)}
+              >
+                <Text style={[styles.pickerCancelText, { color: colors.textPrimary }]}>Cancel</Text>
               </Pressable>
               <Pressable
-                style={styles.pickerDone}
+                style={[styles.pickerDone, { backgroundColor: colors.primary }]}
                 onPress={() => {
                   setDate(formatLocalDate(datePickerDate));
                   setDatePickerVisible(false);
                 }}
               >
-                <Text style={styles.pickerDoneText}>Done</Text>
+                <Text style={[styles.pickerDoneText, { color: colors.primaryText }]}>Done</Text>
               </Pressable>
             </View>
           </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -11,6 +11,7 @@ import { TickEntry } from '../api/tickApi';
 import { useEntryDate } from '../context/EntryDateContext';
 import { useSettings } from '../context/SettingsContext';
 import Feather from '@react-native-vector-icons/feather';
+import { useAppTheme } from '../theme/useAppTheme';
 
 export type EntriesStackParamList = {
   Entries: undefined;
@@ -51,11 +52,12 @@ function EntriesStack() {
 function CreateEntryButton() {
   const navigation = useNavigation();
   const { date } = useEntryDate();
+  const { colors } = useAppTheme();
 
   return (
     <View style={styles.createButtonContainer}>
       <Pressable
-        style={styles.createButton}
+        style={[styles.createButton, { backgroundColor: colors.primary }]}
         onPress={() => {
           const rootNavigation = navigation.getParent() as
             | NativeStackNavigationProp<RootStackParamList>
@@ -63,19 +65,30 @@ function CreateEntryButton() {
           rootNavigation?.navigate('EntryForm', { date });
         }}
       >
-        <Text style={styles.createButtonText}>+</Text>
+        <Text style={[styles.createButtonText, { color: colors.primaryText }]}>+</Text>
       </Pressable>
     </View>
   );
 }
 
 function EmptyScreen() {
-  return <View style={styles.emptyScreen} />;
+  const { colors } = useAppTheme();
+  return <View style={[styles.emptyScreen, { backgroundColor: colors.background }]} />;
 }
 
 function Tabs() {
+  const { colors, isDark } = useAppTheme();
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={{
+        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.textPrimary,
+        tabBarLabelStyle: { color: isDark ? colors.textSecondary : undefined },
+      }}
+    >
       <Tab.Screen
         name="EntriesStack"
         component={EntriesStack}
@@ -108,11 +121,12 @@ function Tabs() {
 
 export default function RootNavigator() {
   const { settings, isReady } = useSettings();
+  const { colors, isDark } = useAppTheme();
 
   if (!isReady) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1f2933" />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -120,7 +134,33 @@ export default function RootNavigator() {
   const hasApiKey = settings.apiKey.trim().length > 0;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      theme={
+        isDark
+          ? {
+              ...DarkTheme,
+              colors: {
+                ...DarkTheme.colors,
+                background: colors.background,
+                card: colors.surface,
+                text: colors.textPrimary,
+                border: colors.border,
+                primary: colors.primary,
+              },
+            }
+          : {
+              ...DefaultTheme,
+              colors: {
+                ...DefaultTheme.colors,
+                background: colors.background,
+                card: colors.surface,
+                text: colors.textPrimary,
+                border: colors.border,
+                primary: colors.primary,
+              },
+            }
+      }
+    >
       <RootStack.Navigator>
         {!hasApiKey ? (
           <RootStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />

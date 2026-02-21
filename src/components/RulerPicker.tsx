@@ -9,6 +9,10 @@ export type RulerConfig = {
   minor: number[];
   width: number;
   renderValue: (value: number) => string;
+  markColor?: string;
+  labelColor?: string;
+  indicatorColor?: string;
+  valueColor?: string;
 };
 
 export type RulerValue = {
@@ -86,9 +90,18 @@ const RulerPicker: FC<Props> = ({ value, onChange, config }) => {
     for (let i = 0; i <= rulerLength; i += 1) {
       const height = minor[i % minorLength];
       marks.push(
-        <View key={i} style={[styles.mark, { height, marginRight: config.width - 1 }]}
->
-          {i % minorLength === 0 && <Text style={styles.markLabel}>{calculateValue(i)}</Text>}
+        <View
+          key={i}
+          style={[
+            styles.mark,
+            { height, marginRight: config.width - 1, backgroundColor: config.markColor ?? '#000000' },
+          ]}
+        >
+          {i % minorLength === 0 && (
+            <Text style={[styles.markLabel, { color: config.labelColor ?? '#000000' }]}>
+              {calculateValue(i)}
+            </Text>
+          )}
         </View>,
       );
     }
@@ -108,8 +121,10 @@ const RulerPicker: FC<Props> = ({ value, onChange, config }) => {
       >
         {renderRulerMarks()}
       </ScrollView>
-      <View style={styles.indicator} />
-      <Text style={styles.valueDisplay}>{config.renderValue(internalValue)}</Text>
+      <View style={[styles.indicator, { backgroundColor: config.indicatorColor ?? 'red' }]} />
+      <Text style={[styles.valueDisplay, { color: config.valueColor ?? '#000000' }]}>
+        {config.renderValue(internalValue)}
+      </Text>
     </View>
   );
 };
