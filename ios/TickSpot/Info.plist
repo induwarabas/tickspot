@@ -33,6 +33,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCalendarsUsageDescription</key>
+	<string>We use calendar events to suggest time entries.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>We use calendar events to suggest time entries.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>RCTNewArchEnabled</key>

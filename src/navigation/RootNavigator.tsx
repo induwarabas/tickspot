@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import EntriesScreen from '../screens/EntriesScreen';
 import EntryFormScreen from '../screens/EntryFormScreen';
@@ -25,7 +25,14 @@ export type RootTabParamList = {
 export type RootStackParamList = {
   Login: undefined;
   Tabs: undefined;
-  EntryForm: { entry?: TickEntry; date?: string } | undefined;
+  EntryForm:
+    | {
+        entry?: TickEntry;
+        date?: string;
+        prefillHours?: number;
+        prefillNotes?: string;
+      }
+    | undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -49,7 +56,10 @@ function CreateEntryButton() {
       <Pressable
         style={styles.createButton}
         onPress={() => {
-          navigation.getParent()?.navigate('EntryForm' as never, { date } as never);
+          const rootNavigation = navigation.getParent() as
+            | NativeStackNavigationProp<RootStackParamList>
+            | undefined;
+          rootNavigation?.navigate('EntryForm', { date });
         }}
       >
         <Text style={styles.createButtonText}>+</Text>

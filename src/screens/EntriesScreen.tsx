@@ -24,6 +24,7 @@ import {
   TickProject,
   TickTask,
 } from '../api/tickApi';
+import { getCalendarSuggestions, SuggestedCalendarEntry } from '../calendar/events';
 import { useSettings } from '../context/SettingsContext';
 import { useEntryDate } from '../context/EntryDateContext';
 
@@ -40,6 +41,9 @@ function shiftDate(value: string, days: number) {
 }
 
 type RootNav = NativeStackNavigationProp<RootStackParamList>;
+type EntryListItem =
+  | { kind: 'entry'; entry: TickEntry }
+  | { kind: 'suggestion'; suggestion: SuggestedCalendarEntry };
 
 export default function EntriesScreen() {
   const navigation = useNavigation();
@@ -52,6 +56,7 @@ export default function EntriesScreen() {
   const [projects, setProjects] = useState<TickProject[]>([]);
   const [tasks, setTasks] = useState<TickTask[]>([]);
   const [clients, setClients] = useState<TickClient[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestedCalendarEntry[]>([]);
 
   const fetchEntries = useCallback(async () => {
     if (!isReady) {
@@ -66,10 +71,31 @@ export default function EntriesScreen() {
     setLoading(true);
     setError(null);
     try {
-      const response = await getEntriesByDate(settings, date);
-      setEntries(response);
+      const [entriesResult, suggestionsResult] = await Promise.allSettled([
+        getEntriesByDate(settings, date),
+        getCalendarSuggestions(date),
+      ]);
+
+      if (entriesResult.status === 'fulfilled') {
+        setEntries(entriesResult.value);
+      } else {
+        setEntries([]);
+        setError(
+          entriesResult.reason instanceof Error
+            ? entriesResult.reason.message
+            : 'Failed to load entries.',
+        );
+      }
+
+      if (suggestionsResult.status === 'fulfilled') {
+        setSuggestions(suggestionsResult.value);
+      } else {
+        setSuggestions([]);
+      }
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load entries.');
+      setEntries([]);
+      setSuggestions([]);
+      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -118,6 +144,25 @@ export default function EntriesScreen() {
   const totalHours = useMemo(
     () => entries.reduce((sum, entry) => sum + Number(entry.hours || 0), 0),
     [entries],
+  );
+  const filteredSuggestions = useMemo(() => {
+    const existingNotes = new Set(
+      entries
+        .map((entry) => (entry.notes ?? '').trim().toLowerCase())
+        .filter((value) => value.length > 0),
+    );
+    return suggestions.filter(
+      (suggestion) => !existingNotes.has(suggestion.note.trim().toLowerCase()),
+    );
+  }, [entries, suggestions]);
+  const listItems = useMemo<EntryListItem[]>(
+    () => [
+      ...entries.map((entry) => ({ kind: 'entry', entry }) as EntryListItem),
+      ...filteredSuggestions.map(
+        (suggestion) => ({ kind: 'suggestion', suggestion }) as EntryListItem,
+      ),
+    ],
+    [entries, filteredSuggestions],
   );
 
   const formatHours = useCallback((value: number) => {
@@ -197,10 +242,12 @@ export default function EntriesScreen() {
       ) : null}
 
       <FlatList
-        data={entries}
-        keyExtractor={(item) => item.id.toString()}
+        data={listItems}
+        keyExtractor={(item) =>
+          item.kind === 'entry' ? item.entry.id.toString() : `suggested-${item.suggestion.id}`
+        }
         refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchEntries} />}
-        contentContainerStyle={entries.length === 0 ? styles.emptyList : undefined}
+        contentContainerStyle={listItems.length === 0 ? styles.emptyList : undefined}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
             {!isReady
@@ -210,49 +257,88 @@ export default function EntriesScreen() {
                 : 'No entries for this date.'}
           </Text>
         }
-        renderItem={({ item }) => (
-          <Swipeable
-            renderRightActions={() => (
-              <Pressable style={styles.swipeDelete} onPress={() => handleDelete(item)}>
-                <Text style={styles.swipeDeleteText}>Delete</Text>
-              </Pressable>
-            )}
-          >
-            <Pressable
-              style={styles.card}
-              onPress={() =>
-                (navigation.getParent()?.getParent() as RootNav | undefined)?.navigate(
-                  'EntryForm',
-                  { entry: item },
-                )
-              }
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardLeft}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
-                    {taskNameById.get(item.task_id ?? 0) ?? 'No task'}
-                  </Text>
-                  <Text style={styles.cardSubtitle} numberOfLines={1}>
-                    {(item.project_id
-                      ? clientNameById.get(projectById.get(item.project_id)?.client_id ?? 0)
-                      : clientNameById.get(
-                          projectById.get(taskById.get(item.task_id)?.project_id ?? 0)?.client_id ??
-                            0,
-                        )) || 'Unassigned'}{' '}
-                    -{' '}
-                    {projectById.get(
-                      item.project_id ?? taskById.get(item.task_id ?? 0)?.project_id ?? 0,
-                    )?.name ?? 'No project'}
+        renderItem={({ item }) => {
+          if (item.kind === 'suggestion') {
+            const suggestion = item.suggestion;
+            return (
+              <Pressable
+                style={[styles.card, styles.suggestionCard]}
+                onPress={() =>
+                  (navigation.getParent()?.getParent() as RootNav | undefined)?.navigate(
+                    'EntryForm',
+                    {
+                      date: suggestion.date,
+                      prefillHours: suggestion.hours,
+                      prefillNotes: suggestion.note,
+                    },
+                  )
+                }
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardLeft}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      {suggestion.title}
+                    </Text>
+                    <Text style={styles.suggestionSubtitle} numberOfLines={1}>
+                      {suggestion.subtitle}
+                    </Text>
+                  </View>
+                  <Text style={[styles.cardHours, styles.suggestionHours]}>
+                    {formatHours(suggestion.hours)}
                   </Text>
                 </View>
-                <Text style={styles.cardHours}>{formatHours(Number(item.hours || 0))}</Text>
-              </View>
-              <Text style={styles.cardNotes} numberOfLines={1}>
-                {item.notes || 'No notes provided.'}
-              </Text>
-            </Pressable>
-          </Swipeable>
-        )}
+                <Text style={styles.cardNotes} numberOfLines={1}>
+                  {suggestion.note}
+                </Text>
+              </Pressable>
+            );
+          }
+
+          const entry = item.entry;
+          return (
+            <Swipeable
+              renderRightActions={() => (
+                <Pressable style={styles.swipeDelete} onPress={() => handleDelete(entry)}>
+                  <Text style={styles.swipeDeleteText}>Delete</Text>
+                </Pressable>
+              )}
+            >
+              <Pressable
+                style={styles.card}
+                onPress={() =>
+                  (navigation.getParent()?.getParent() as RootNav | undefined)?.navigate(
+                    'EntryForm',
+                    { entry },
+                  )
+                }
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardLeft}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      {taskNameById.get(entry.task_id ?? 0) ?? 'No task'}
+                    </Text>
+                    <Text style={styles.cardSubtitle} numberOfLines={1}>
+                      {(entry.project_id
+                        ? clientNameById.get(projectById.get(entry.project_id)?.client_id ?? 0)
+                        : clientNameById.get(
+                            projectById.get(taskById.get(entry.task_id ?? 0)?.project_id ?? 0)
+                              ?.client_id ?? 0,
+                          )) || 'Unassigned'}{' '}
+                      -{' '}
+                      {projectById.get(
+                        entry.project_id ?? taskById.get(entry.task_id ?? 0)?.project_id ?? 0,
+                      )?.name ?? 'No project'}
+                    </Text>
+                  </View>
+                  <Text style={styles.cardHours}>{formatHours(Number(entry.hours || 0))}</Text>
+                </View>
+                <Text style={styles.cardNotes} numberOfLines={1}>
+                  {entry.notes || 'No notes provided.'}
+                </Text>
+              </Pressable>
+            </Swipeable>
+          );
+        }}
       />
     </View>
   );
@@ -343,6 +429,17 @@ const styles = StyleSheet.create({
   },
   cardNotes: {
     color: '#8c8577',
+  },
+  suggestionCard: {
+    backgroundColor: '#ecfdf3',
+    borderBottomColor: '#c8ebd5',
+  },
+  suggestionSubtitle: {
+    color: '#067647',
+    marginBottom: 2,
+  },
+  suggestionHours: {
+    color: '#067647',
   },
   swipeDelete: {
     justifyContent: 'center',

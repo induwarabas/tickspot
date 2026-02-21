@@ -7,7 +7,8 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "pod-install": "pod-install"
   },
   "dependencies": {
     "@notifee/react-native": "^7.8.2",
@@ -18,8 +19,10 @@
     "@react-navigation/bottom-tabs": "^7.3.1",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/native-stack": "^7.3.21",
+    "pod-install": "^1.0.9",
     "react": "19.2.0",
     "react-native": "0.83.1",
+    "react-native-calendar-events": "^2.2.0",
     "react-native-gesture-handler": "^2.28.0",
     "react-native-haptic-feedback": "^2.3.1",
     "react-native-safe-area-context": "^5.5.2",

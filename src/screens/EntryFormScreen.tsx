@@ -45,15 +45,17 @@ export default function EntryFormScreen({ navigation, route }: Props) {
   const { settings, isReady } = useSettings();
   const entry = route.params?.entry;
   const defaultDate = route.params?.date;
+  const prefillHours = route.params?.prefillHours;
+  const prefillNotes = route.params?.prefillNotes;
 
   const [date, setDate] = useState(entry?.date ?? defaultDate ?? todayString());
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [datePickerDate, setDatePickerDate] = useState(parseLocalDate(date));
   const [hours, setHours] = useState(() => {
-    const initial = Number(entry?.hours ?? 0);
+    const initial = Number(entry?.hours ?? prefillHours ?? 0);
     return Number.isFinite(initial) ? initial : 0;
   });
-  const [notes, setNotes] = useState(entry?.notes ?? '');
+  const [notes, setNotes] = useState(entry?.notes ?? prefillNotes ?? '');
   const [projectId, setProjectId] = useState<number | null>(entry?.project_id ?? null);
   const [taskId, setTaskId] = useState<number | null>(entry?.task_id ?? null);
   const [isSaving, setIsSaving] = useState(false);
