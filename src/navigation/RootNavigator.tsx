@@ -2,12 +2,14 @@ import React from 'react';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import EntriesScreen from '../screens/EntriesScreen';
 import EntryFormScreen from '../screens/EntryFormScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import LoginScreen from '../screens/LoginScreen';
 import { TickEntry } from '../api/tickApi';
 import { useEntryDate } from '../context/EntryDateContext';
+import { useSettings } from '../context/SettingsContext';
 import Feather from '@react-native-vector-icons/feather';
 
 export type EntriesStackParamList = {
@@ -21,6 +23,7 @@ export type RootTabParamList = {
 };
 
 export type RootStackParamList = {
+  Login: undefined;
   Tabs: undefined;
   EntryForm: { entry?: TickEntry; date?: string } | undefined;
 };
@@ -93,10 +96,26 @@ function Tabs() {
 }
 
 export default function RootNavigator() {
+  const { settings, isReady } = useSettings();
+
+  if (!isReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1f2933" />
+      </View>
+    );
+  }
+
+  const hasApiKey = settings.apiKey.trim().length > 0;
+
   return (
     <NavigationContainer>
       <RootStack.Navigator>
-        <RootStack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+        {!hasApiKey ? (
+          <RootStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        ) : (
+          <RootStack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+        )}
         <RootStack.Screen
           name="EntryForm"
           component={EntryFormScreen}
@@ -108,6 +127,12 @@ export default function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f5f0',
+  },
   createButtonContainer: {
     flex: 1,
     alignItems: 'center',
