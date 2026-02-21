@@ -31,6 +31,7 @@ export type RootStackParamList = {
         date?: string;
         prefillHours?: number;
         prefillNotes?: string;
+        prefillTaskId?: number;
       }
     | undefined;
 };

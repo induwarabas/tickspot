@@ -27,11 +27,13 @@ import {
 import { getCalendarSuggestions, SuggestedCalendarEntry } from '../calendar/events';
 import { useSettings } from '../context/SettingsContext';
 import { useEntryDate } from '../context/EntryDateContext';
+import { loadMeetingTaskMap } from '../storage/meetingTaskMemory';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
   `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 const todayString = () => formatLocalDate(new Date());
+const normalizeNote = (value: string) => value.trim().toLowerCase();
 
 function shiftDate(value: string, days: number) {
   const [year, month, day] = value.split('-').map(Number);
@@ -57,6 +59,7 @@ export default function EntriesScreen() {
   const [tasks, setTasks] = useState<TickTask[]>([]);
   const [clients, setClients] = useState<TickClient[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestedCalendarEntry[]>([]);
+  const [meetingTaskMap, setMeetingTaskMap] = useState<Record<string, number>>({});
 
   const fetchEntries = useCallback(async () => {
     if (!isReady) {
@@ -75,6 +78,8 @@ export default function EntriesScreen() {
         getEntriesByDate(settings, date),
         getCalendarSuggestions(date),
       ]);
+      const rememberedTasks = await loadMeetingTaskMap();
+      setMeetingTaskMap(rememberedTasks);
 
       if (entriesResult.status === 'fulfilled') {
         setEntries(entriesResult.value);
@@ -148,11 +153,11 @@ export default function EntriesScreen() {
   const filteredSuggestions = useMemo(() => {
     const existingNotes = new Set(
       entries
-        .map((entry) => (entry.notes ?? '').trim().toLowerCase())
+        .map((entry) => normalizeNote(entry.notes ?? ''))
         .filter((value) => value.length > 0),
     );
     return suggestions.filter(
-      (suggestion) => !existingNotes.has(suggestion.note.trim().toLowerCase()),
+      (suggestion) => !existingNotes.has(normalizeNote(suggestion.note)),
     );
   }, [entries, suggestions]);
   const listItems = useMemo<EntryListItem[]>(
@@ -260,6 +265,7 @@ export default function EntriesScreen() {
         renderItem={({ item }) => {
           if (item.kind === 'suggestion') {
             const suggestion = item.suggestion;
+            const mappedTaskId = meetingTaskMap[normalizeNote(suggestion.note)];
             return (
               <Pressable
                 style={[styles.card, styles.suggestionCard]}
@@ -270,6 +276,7 @@ export default function EntriesScreen() {
                       date: suggestion.date,
                       prefillHours: suggestion.hours,
                       prefillNotes: suggestion.note,
+                      prefillTaskId: mappedTaskId,
                     },
                   )
                 }

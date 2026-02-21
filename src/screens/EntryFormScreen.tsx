@@ -26,6 +26,7 @@ import {
 } from '../api/tickApi';
 import { useSettings } from '../context/SettingsContext';
 import RulerPicker, { RulerConfig } from '../components/RulerPicker';
+import { rememberTaskForMeetingNote } from '../storage/meetingTaskMemory';
 
 const pad2 = (value: number) => value.toString().padStart(2, '0');
 const formatLocalDate = (date: Date) =>
@@ -47,6 +48,7 @@ export default function EntryFormScreen({ navigation, route }: Props) {
   const defaultDate = route.params?.date;
   const prefillHours = route.params?.prefillHours;
   const prefillNotes = route.params?.prefillNotes;
+  const prefillTaskId = route.params?.prefillTaskId;
 
   const [date, setDate] = useState(entry?.date ?? defaultDate ?? todayString());
   const [datePickerVisible, setDatePickerVisible] = useState(false);
@@ -57,7 +59,7 @@ export default function EntryFormScreen({ navigation, route }: Props) {
   });
   const [notes, setNotes] = useState(entry?.notes ?? prefillNotes ?? '');
   const [projectId, setProjectId] = useState<number | null>(entry?.project_id ?? null);
-  const [taskId, setTaskId] = useState<number | null>(entry?.task_id ?? null);
+  const [taskId, setTaskId] = useState<number | null>(entry?.task_id ?? prefillTaskId ?? null);
   const [isSaving, setIsSaving] = useState(false);
   const [projects, setProjects] = useState<TickProject[]>([]);
   const [tasks, setTasks] = useState<TickTask[]>([]);
@@ -92,8 +94,9 @@ export default function EntryFormScreen({ navigation, route }: Props) {
         setProjects(projectList);
         setTasks(taskList);
         setClients(clientList);
-        if (entry?.task_id) {
-          const matched = taskList.find((task) => task.id === entry.task_id);
+        const seedTaskId = entry?.task_id ?? prefillTaskId ?? taskId;
+        if (seedTaskId) {
+          const matched = taskList.find((task) => task.id === seedTaskId);
           if (matched?.project_id != null) {
             setProjectId((current) => current ?? matched.project_id ?? null);
           }
@@ -113,7 +116,7 @@ export default function EntryFormScreen({ navigation, route }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [isReady, settings, entry?.task_id]);
+  }, [isReady, settings, entry?.task_id, prefillTaskId, taskId]);
 
   const projectNameById = useMemo(() => {
     const map = new Map<number, string>();
@@ -185,6 +188,9 @@ export default function EntryFormScreen({ navigation, route }: Props) {
         await updateEntry(settings, entry.id, payload);
       } else {
         await createEntry(settings, payload);
+      }
+      if (taskId && notes.trim()) {
+        await rememberTaskForMeetingNote(notes, taskId);
       }
       navigation.goBack();
     } catch (error) {
